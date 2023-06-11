@@ -67,3 +67,50 @@ def plot_predictions(train_data,
 
     # Show the legend
     plt.legend(prop={"size": 14})
+
+
+
+def eval_model(model : torch.nn.Module ,
+               data_loader : torch.utils.data.DataLoader,
+               loss_fn : torch.nn.Module,
+               accuracy_fn,
+               device : torch.device) :
+               """
+               Returns a dictionary containing the results of model preidicting on the data laoder.
+
+               Args : 
+               model (torch.nn.Module) - Model to be evaluated.
+               data_loader (torch.utils.data.DataLoader) - Data Loader to be used for evaluation of the model.
+               loss_fn (torch.nn.Module) - Loss function to calculate the loss during evaluation.
+               accuracy_fn - Accuracy function to calculate the accuracy during evaluation.
+               device (torch.device) - The device where the model and values are to be evaluated.
+
+               Returns : 
+               dict containing :
+                "model_name",
+                "model_loss",
+                "model_acc"
+               """
+               eval_loss , eval_acc = 0 , 0
+               model.eval()
+               with torch.inference_mode():
+                    for X , y in tqdm(data_loader):
+                        X , y = X.to(device) , y.to(device)
+
+                        # making predictions
+                        y_pred = model(X)
+
+                        # calculate the loss and accuracy per batch
+                        loss = loss_fn(y_pred , y)
+                        acc = accuracy_fn(y_pred , y)
+
+                        # accumulate the loss and accuracy per batch
+                        eval_loss += loss
+                        eval_acc += acc
+                    # calculate average loss and accuracy per epoch
+                    eval_loss /= len(data_loader)
+                    eval_acc /= len(data_loader)
+                    return {
+                "model_name" : model.__class__.__name__,
+                "model_loss" : eval_loss.item(),
+                "model_acc" : eval_acc.item()*100 }
